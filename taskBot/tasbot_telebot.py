@@ -33,6 +33,9 @@ def error(update, context):
 def task(update, context):
     update.message.reply_text('Yep, task!')
 
+def edit(update, context):
+    update.message.reply_text('Yep, edit!')
+
 
 def main():
     """Start the bot."""
@@ -48,6 +51,7 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("task", task))
+    dp.add_handler(CommandHandler("edit", edit))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
