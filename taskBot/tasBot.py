@@ -1,5 +1,6 @@
 import telegram
 import logging
+from telegram.error import NetworkError, Unauthorized
 import telegram.ext
 
 token = '1031956446:AAEqMOHrjTmC5lC0ub6sBbUrX-gY5pzfAdA'
@@ -9,17 +10,45 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 
-def start(update, context):
-    bot = context.bot
-    text = "Hola putos"
-    chat_id = update.message.chat_id
+update_id = None
 
 
-if __name__ == '__main__':
+def main():
+    """Run the bot."""
+    global update_id
+    # Telegram Bot Authorization Token
+    bot = telegram.bot(token)
+
+    # get the first pending update_id, this is so we can skip over it in case
+    # we get an "Unauthorized" exception.
     try:
         update_id = bot.get_updates()[0].update_id
     except IndexError:
         update_id = None
 
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-   start()
+    while True:
+        try:
+            echo(bot)
+        except NetworkError:
+            sleep(1)
+        except Unauthorized:
+            # The user has removed or blocked the bot.
+            update_id += 1
+
+
+def echo(bot):
+    """Echo the message the user sent."""
+    global update_id
+    # Request updates after the last update_id
+    for update in bot.get_updates(offset=update_id, timeout=10):
+        update_id = update.update_id + 1
+
+        if update.message:  # your bot can receive updates without messages
+            # Reply to the message
+            update.message.reply_text(update.message.text)
+
+
+if __name__ == '__main__':
+    main()
