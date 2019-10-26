@@ -1,7 +1,10 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 import logging
-from firebase import firebase
+from telegram.error import NetworkError, Unauthorized
+from time import sleep
+#from firebase import firebase
+
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -9,18 +12,18 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger('TaskBot')
 
-firebase = firebase.FirebaseApplication("https://taskbot-8fb12.firebaseio.com/", None)
+#firebase = firebase.FirebaseApplication("https://taskbot-8fb12.firebaseio.com/", None)
 
 # Stages
-FIRST, SECOND = range(2)
+menu, opciones = range(2)
 # Callback data
 ONE, TWO, THREE, FOUR = range(4)
 
 
 def start(update, context):
     """Send message on `/start`."""
-    # Get user that sent /start and log his name
     user = update.message.from_user
+    # Get user that sent /start and log his name
     logger.info("User %s started the conversation.", user.first_name)
     # Build InlineKeyboard where each button has a displayed text
     # and a string as callback_data
@@ -37,7 +40,7 @@ def start(update, context):
         reply_markup=reply_markup
     )
     # Tell ConversationHandler that we're in state `FIRST` now
-    return FIRST
+    return menu
 
 
 def start_over(update, context):
@@ -47,8 +50,8 @@ def start_over(update, context):
     # Get Bot from CallbackContext
     bot = context.bot
     keyboard = [
-        [InlineKeyboardButton("1", callback_data=str(ONE)),
-         InlineKeyboardButton("2", callback_data=str(TWO))]
+        [InlineKeyboardButton("Crear tablero", callback_data=str(ONE)),
+         InlineKeyboardButton("Revisar tableros", callback_data=str(TWO))]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     # Instead of sending a new message, edit the message that
@@ -60,7 +63,7 @@ def start_over(update, context):
         text="Start handler, Choose a route",
         reply_markup=reply_markup
     )
-    return FIRST
+    return menu
 
 
 def createBoard(update, context):
@@ -68,19 +71,18 @@ def createBoard(update, context):
     query = update.callback_query
     bot = context.bot
     keyboard = [
-        [InlineKeyboardButton("3", callback_data=str(THREE)),
-         InlineKeyboardButton("4", callback_data=str(FOUR))]
+        [InlineKeyboardButton("Tablero1", callback_data=str(THREE)),
+         InlineKeyboardButton("Tablero2", callback_data=str(FOUR))]
     ]
-    #reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = InlineKeyboardMarkup(keyboard)
     bot.edit_message_text(
         chat_id=query.message.chat_id,
         message_id=query.message.message_id,
-        text="Dime el nombre del tablero a crear: \n nombreTablero",
-        #reply_markup=reply_markup
+        text="Dime el nombre del tablero a crear:",
+        reply_markup=reply_markup
     )
 
-
-    return FIRST
+    return menu
 
 
 def editTask(update, context):
@@ -98,7 +100,7 @@ def editTask(update, context):
         text="Second CallbackQueryHandler, Choose a route",
         reply_markup=reply_markup
     )
-    return FIRST
+    return menu
 
 
 def three(update, context):
@@ -117,7 +119,7 @@ def three(update, context):
         reply_markup=reply_markup
     )
     # Transfer to conversation state `SECOND`
-    return SECOND
+    return opciones
 
 
 def four(update, context):
@@ -135,7 +137,7 @@ def four(update, context):
         text="Fourth CallbackQueryHandler, Choose a route",
         reply_markup=reply_markup
     )
-    return FIRST
+    return menu
 
 
 def end(update, context):
@@ -172,12 +174,12 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
-            FIRST: [CallbackQueryHandler(createBoard, pattern='^' + str(ONE) + '$'),
-                    CallbackQueryHandler(editTask, pattern='^' + str(TWO) + '$'),
-                    CallbackQueryHandler(three, pattern='^' + str(THREE) + '$'),
-                    CallbackQueryHandler(four, pattern='^' + str(FOUR) + '$')],
-            SECOND: [CallbackQueryHandler(start_over, pattern='^' + str(ONE) + '$'),
-                     CallbackQueryHandler(end, pattern='^' + str(TWO) + '$')]
+            menu: [CallbackQueryHandler(createBoard, pattern='^' + str(ONE) + '$'),
+                   CallbackQueryHandler(editTask, pattern='^' + str(TWO) + '$'),
+                   CallbackQueryHandler(three, pattern='^' + str(THREE) + '$'),
+                   CallbackQueryHandler(four, pattern='^' + str(FOUR) + '$')],
+            opciones: [CallbackQueryHandler(start_over, pattern='^' + str(ONE) + '$'),
+                       CallbackQueryHandler(end, pattern='^' + str(TWO) + '$')]
         },
         fallbacks=[CommandHandler('start', start)]
     )
