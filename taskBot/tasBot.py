@@ -43,7 +43,6 @@ def echo(bot):
             # Reply to the message
             update.message.reply_text(update.message.text)
 
-
-
 if __name__ == '__main__':
     main()
+
